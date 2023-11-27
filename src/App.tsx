@@ -10,7 +10,7 @@ import { publicProvider } from "wagmi/providers/public";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 
-const { chains, publicClient } = configureChains(
+const { chains, publicClient, webSocketPublicClient } = configureChains(
   [sepolia],
   [
     alchemyProvider({ apiKey: "IM0-eXDmkcNyPx7Qh1HLbWCDj3XIcOPe" }),
@@ -31,6 +31,7 @@ const wagmiConfig = createConfig({
     }),
   ],
   publicClient,
+  webSocketPublicClient,
 });
 
 function App() {
