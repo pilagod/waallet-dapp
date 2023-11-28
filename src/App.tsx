@@ -3,7 +3,15 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 
-import { WagmiConfig, configureChains, createConfig, useConnect } from "wagmi";
+import {
+  WagmiConfig,
+  configureChains,
+  createConfig,
+  useAccount,
+  useBalance,
+  useConnect,
+  useWalletClient,
+} from "wagmi";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
@@ -37,8 +45,34 @@ const wagmiConfig = createConfig({
 function App() {
   return (
     <WagmiConfig config={wagmiConfig}>
-      <ConnectButton></ConnectButton>
+      <DApp />
     </WagmiConfig>
+  );
+}
+
+function DApp() {
+  const { isConnected } = useAccount();
+  if (isConnected) {
+    return <Profile />;
+  }
+  return <ConnectButton />;
+}
+
+function Profile() {
+  const { address, connector, isConnected } = useAccount();
+  const { data: client } = useWalletClient();
+  const { data: balance } = useBalance({
+    address,
+    formatUnits: "ether",
+  });
+  if (!(isConnected && client && balance)) {
+    return <></>;
+  }
+  return (
+    <div>
+      <div>{address}</div>
+      <div>Balance: {balance.formatted} ETH</div>
+    </div>
   );
 }
 
