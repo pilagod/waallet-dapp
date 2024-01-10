@@ -61,7 +61,10 @@ function DApp() {
 function Profile() {
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
-  const { data: balance, refetch } = useBalance({ address, unit: "ether" });
+  const { data: balance, refetch } = useBalance({
+    address,
+    unit: "ether",
+  });
   const { data: hash, sendTransactionAsync } = useSendTransaction();
   if (!address) {
     return <div>Loading...</div>;
