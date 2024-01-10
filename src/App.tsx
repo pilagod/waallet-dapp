@@ -8,6 +8,7 @@ import {
   useBalance,
   useConnect,
   useDisconnect,
+  useSendTransaction,
 } from "wagmi";
 import { custom, defineChain } from "viem";
 import { sepolia } from "viem/chains";
@@ -60,12 +61,24 @@ function DApp() {
 function Profile() {
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
-  const { data: balance } = useBalance({ address, unit: "ether" });
+  const { data: balance, refetch } = useBalance({ address, unit: "ether" });
+  const { data: hash, sendTransactionAsync } = useSendTransaction();
+  if (!address) {
+    return <div>Loading...</div>;
+  }
   return (
     <div>
       <div>{address}</div>
       {balance && <div>Balance: {balance.formatted} ETH</div>}
       <button onClick={() => disconnect()}>Disconnect</button>
+      <button
+        onClick={async () => {
+          await sendTransactionAsync({ to: address, value: 1n });
+          await refetch();
+        }}
+      >
+        Transfer
+      </button>
     </div>
   );
 }
