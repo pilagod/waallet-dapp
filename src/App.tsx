@@ -1,52 +1,52 @@
-import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  WagmiConfig,
-  configureChains,
+  WagmiProvider,
   createConfig,
   useAccount,
   useBalance,
   useConnect,
-  useWalletClient,
+  useDisconnect,
+  useSendTransaction,
 } from "wagmi";
-import { InjectedConnector } from "wagmi/connectors/injected";
-import { alchemyProvider } from "wagmi/providers/alchemy";
-import { publicProvider } from "wagmi/providers/public";
-import { createPublicClient, http } from "viem";
+import { custom, defineChain } from "viem";
 import { sepolia } from "viem/chains";
 
-const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [sepolia],
-  [
-    alchemyProvider({ apiKey: "IM0-eXDmkcNyPx7Qh1HLbWCDj3XIcOPe" }),
-    publicProvider(),
-  ]
-);
+const testnet = defineChain({
+  id: 31337,
+  name: "Testnet",
+  network: "testnet",
+  nativeCurrency: {
+    decimals: 18,
+    name: "Ether",
+    symbol: "ETH",
+  },
+  rpcUrls: {
+    default: {
+      http: ["http://localhost:8545"],
+    },
+    public: {
+      http: ["http://localhost:8545"],
+    },
+  },
+});
 
 const wagmiConfig = createConfig({
-  connectors: [
-    new InjectedConnector({
-      chains,
-      options: {
-        name: "Waallet",
-        getProvider: () => {
-          return (window as any).waallet;
-        },
-      },
-    }),
-  ],
-  publicClient,
-  webSocketPublicClient,
+  chains: [testnet, sepolia],
+  transports: {
+    [testnet.id]: custom((window as any).waallet),
+    [sepolia.id]: custom((window as any).waallet),
+  },
 });
 
 function App() {
   return (
-    <WagmiConfig config={wagmiConfig}>
-      <DApp />
-    </WagmiConfig>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={new QueryClient()}>
+        <DApp />
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }
 
@@ -59,43 +59,42 @@ function DApp() {
 }
 
 function Profile() {
-  const { address, connector, isConnected } = useAccount();
-  const { data: client } = useWalletClient();
-  const { data: balance } = useBalance({
+  const { address } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { data: balance, refetch } = useBalance({
     address,
-    formatUnits: "ether",
+    unit: "ether",
   });
-  if (!(isConnected && client && balance)) {
-    return <></>;
+  const { data: hash, sendTransactionAsync } = useSendTransaction();
+  if (!address) {
+    return <div>Loading...</div>;
   }
   return (
     <div>
       <div>{address}</div>
-      <div>Balance: {balance.formatted} ETH</div>
+      {balance && <div>Balance: {balance.formatted} ETH</div>}
+      <button onClick={() => disconnect()}>Disconnect</button>
+      <button
+        onClick={async () => {
+          await sendTransactionAsync({ to: address, value: 1n });
+          await refetch();
+        }}
+      >
+        Transfer
+      </button>
     </div>
   );
 }
 
 function ConnectButton() {
-  const { connect, connectors, error, isLoading, pendingConnector } =
-    useConnect();
+  const { connect, connectors } = useConnect();
   return (
     <div>
       {connectors.map((connector) => (
-        <button
-          disabled={!connector.ready}
-          key={connector.id}
-          onClick={() => connect({ connector })}
-        >
+        <button key={connector.uid} onClick={() => connect({ connector })}>
           {connector.name}
-          {!connector.ready && " (unsupported)"}
-          {isLoading &&
-            connector.id === pendingConnector?.id &&
-            " (connecting)"}
         </button>
       ))}
-
-      {error && <div>{error.message}</div>}
     </div>
   );
 }
