@@ -10,7 +10,7 @@ import {
   useDisconnect,
   useSendTransaction,
 } from "wagmi";
-import { custom, defineChain } from "viem";
+import { custom, defineChain, formatUnits, parseEther } from "viem";
 import { sepolia } from "viem/chains";
 
 const testnet = defineChain({
@@ -65,18 +65,23 @@ function Profile() {
     address,
     unit: "ether",
   });
-  const { data: hash, sendTransactionAsync } = useSendTransaction();
+  const { sendTransactionAsync } = useSendTransaction();
   if (!address) {
     return <div>Loading...</div>;
   }
   return (
     <div>
       <div>{address}</div>
-      {balance && <div>Balance: {balance.formatted} ETH</div>}
+      {balance && (
+        <div>Balance: {formatUnits(balance.value, balance.decimals)} ETH</div>
+      )}
       <button onClick={() => disconnect()}>Disconnect</button>
       <button
         onClick={async () => {
-          await sendTransactionAsync({ to: address, value: 1n });
+          await sendTransactionAsync({
+            to: "0x0000000000000000000000000000000000000001",
+            value: parseEther("0.1"),
+          });
           await refetch();
         }}
       >
