@@ -87,6 +87,7 @@ function Profile() {
       >
         Transfer
       </button>
+      <OpenDevtoolWindow />
     </div>
   );
 }
@@ -101,6 +102,29 @@ function ConnectButton() {
         </button>
       ))}
     </div>
+  );
+}
+
+function OpenDevtoolWindow() {
+  const buttonConnectWaalet = async () => {
+    await (window as any).waallet.createWindow({
+      creation: {
+        user: "imToken Labs",
+        challenge: "5r264oeeza45DAAnFgSNLybypGsY64GeIa2C5UqbmRk",
+      },
+      request: {
+        credentialId: "jyZ19cHuw8toyyZDHxz7dOVmZ00fRSsvm1WSMV9dfRc",
+        challenge: "5r264oeeza45DAAnFgSNLybypGsY64GeIa2C5UqbmRk",
+      },
+    });
+  };
+
+  return (
+    <>
+      <div id="createwindow">
+        <button onClick={buttonConnectWaalet}>Create Window</button>
+      </div>
+    </>
   );
 }
 
