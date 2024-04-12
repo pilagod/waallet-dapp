@@ -79,8 +79,8 @@ function Profile() {
       <button
         onClick={async () => {
           await sendTransactionAsync({
-            to: "0x0000000000000000000000000000000000000001",
-            value: parseEther("0.1"),
+            to: address,
+            value: BigInt(1),
           });
           await refetch();
         }}
