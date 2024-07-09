@@ -90,7 +90,7 @@ function Profile() {
       >
         Transfer
       </button>
-      {chainId === 1337 && <CounterIncrementButton />}
+      {chainId === 1337 && <CounterInteraction />}
     </div>
   );
 }
@@ -108,7 +108,7 @@ function ConnectButton() {
   );
 }
 
-function CounterIncrementButton() {
+function CounterInteraction() {
   const abi = [
     {
       type: "function",
