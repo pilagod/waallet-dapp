@@ -1,4 +1,5 @@
 import "./App.css";
+import { useEffect } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -8,13 +9,15 @@ import {
   useBalance,
   useConnect,
   useDisconnect,
+  useReadContract,
   useSendTransaction,
+  useWriteContract,
 } from "wagmi";
 import { custom, defineChain, formatUnits, parseEther } from "viem";
 import { sepolia } from "viem/chains";
 
 const testnet = defineChain({
-  id: 31337,
+  id: 1337,
   name: "Testnet",
   network: "testnet",
   nativeCurrency: {
@@ -59,7 +62,7 @@ function DApp() {
 }
 
 function Profile() {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
   const { disconnect } = useDisconnect();
   const { data: balance, refetch } = useBalance({
     address,
@@ -80,13 +83,14 @@ function Profile() {
         onClick={async () => {
           await sendTransactionAsync({
             to: "0x0000000000000000000000000000000000000001",
-            value: parseEther("0.1"),
+            value: parseEther("0.01"),
           });
           await refetch();
         }}
       >
         Transfer
       </button>
+      {chainId === 1337 && <CounterInteraction />}
     </div>
   );
 }
@@ -100,6 +104,53 @@ function ConnectButton() {
           {connector.name}
         </button>
       ))}
+    </div>
+  );
+}
+
+function CounterInteraction() {
+  const abi = [
+    {
+      type: "function",
+      name: "number",
+      inputs: [],
+      outputs: [{ name: "", type: "uint256" }],
+      stateMutability: "view",
+    },
+    {
+      type: "function",
+      name: "increment",
+      inputs: [],
+      outputs: [],
+      stateMutability: "payable",
+    },
+  ];
+  const address = "0x8464135c8F25Da09e49BC8782676a84730C318bC";
+  const counter = useReadContract({
+    abi,
+    address,
+    functionName: "number",
+  });
+  const { writeContractAsync, data: txHash } = useWriteContract();
+
+  useEffect(() => {
+    counter.refetch();
+  }, [txHash]);
+
+  const onClick = async () => {
+    await writeContractAsync({
+      abi,
+      address: "0x8464135c8F25Da09e49BC8782676a84730C318bC",
+      functionName: "increment",
+    });
+  };
+
+  return (
+    <div>
+      {counter.isFetched && (
+        <div>Current number: {(counter.data as bigint).toString()}</div>
+      )}
+      <button onClick={onClick}>Increment Counter</button>
     </div>
   );
 }
