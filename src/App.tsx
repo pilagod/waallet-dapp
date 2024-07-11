@@ -1,5 +1,5 @@
 import "./App.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -13,7 +13,7 @@ import {
   useSendTransaction,
   useWriteContract,
 } from "wagmi";
-import { custom, defineChain, formatUnits, parseEther } from "viem";
+import { custom, defineChain, formatUnits, parseEther, getAddress } from "viem";
 import { sepolia } from "viem/chains";
 
 const testnet = defineChain({
@@ -69,6 +69,12 @@ function Profile() {
     unit: "ether",
   });
   const { sendTransactionAsync } = useSendTransaction();
+  const [toAddress, setToAddress] = useState<string>(
+    getAddress("0x0000000000000000000000000000000000000001")
+  );
+  const [value, setValue] = useState<string>("0.01");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
   if (!address) {
     return <div>Loading...</div>;
   }
@@ -79,18 +85,64 @@ function Profile() {
         <div>Balance: {formatUnits(balance.value, balance.decimals)} ETH</div>
       )}
       <button onClick={() => disconnect()}>Disconnect</button>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <label htmlFor="toAddress" style={{ whiteSpace: "nowrap" }}>
+          To address:
+        </label>
+        <input
+          id="toAddress"
+          type="text"
+          value={toAddress}
+          style={{ width: "350px" }}
+          onChange={(event) => {
+            try {
+              setErrorMessage("");
+              setToAddress(getAddress(event.target.value));
+            } catch (e) {
+              setErrorMessage((e as Error).message);
+              setToAddress(event.target.value);
+            }
+          }}
+        />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <label htmlFor="value" style={{ whiteSpace: "nowrap" }}>
+          Value:
+        </label>
+        <input
+          id="value"
+          type="text"
+          value={value}
+          style={{ width: "350px" }}
+          onChange={(event) => {
+            try {
+              setErrorMessage("");
+              parseEther(event.target.value);
+              setValue(event.target.value);
+            } catch (e) {
+              setErrorMessage((e as Error).message);
+              setValue(event.target.value);
+            }
+          }}
+        />
+      </div>
       <button
+        disabled={!!errorMessage}
         onClick={async () => {
           await sendTransactionAsync({
-            to: "0x0000000000000000000000000000000000000001",
-            value: parseEther("0.01"),
+            to: getAddress(toAddress),
+            value: parseEther(value),
           });
           await refetch();
         }}
       >
         Transfer
       </button>
+      {errorMessage && (
+        <div style={{ color: "red", width: "350px" }}>{errorMessage}</div>
+      )}
       {chainId === 1337 && <CounterInteraction />}
+      <OpenDevtoolWindow />
     </div>
   );
 }
@@ -152,6 +204,29 @@ function CounterInteraction() {
       )}
       <button onClick={onClick}>Increment Counter</button>
     </div>
+  );
+}
+
+function OpenDevtoolWindow() {
+  const buttonConnectWaalet = async () => {
+    await (window as any).waallet.createWindow({
+      creation: {
+        user: "imToken Labs",
+        challenge: "5r264oeeza45DAAnFgSNLybypGsY64GeIa2C5UqbmRk",
+      },
+      request: {
+        credentialId: "jyZ19cHuw8toyyZDHxz7dOVmZ00fRSsvm1WSMV9dfRc",
+        challenge: "5r264oeeza45DAAnFgSNLybypGsY64GeIa2C5UqbmRk",
+      },
+    });
+  };
+
+  return (
+    <>
+      <div id="createwindow">
+        <button onClick={buttonConnectWaalet}>Create Window</button>
+      </div>
+    </>
   );
 }
 
