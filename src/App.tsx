@@ -62,7 +62,7 @@ function DApp() {
 }
 
 function Profile() {
-  const { address, chainId } = useAccount();
+  const { address, chainId, connector } = useAccount();
   const { disconnect } = useDisconnect();
   const { data: balance, refetch } = useBalance({
     address,
@@ -74,6 +74,7 @@ function Profile() {
   );
   const [value, setValue] = useState<string>("0.01");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [eip712Signature, setEip712Signature] = useState("");
 
   if (!address) {
     return <div>Loading...</div>;
@@ -85,9 +86,12 @@ function Profile() {
         <div>Balance: {formatUnits(balance.value, balance.decimals)} ETH</div>
       )}
       <button onClick={() => disconnect()}>Disconnect</button>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <label htmlFor="toAddress" style={{ whiteSpace: "nowrap" }}>
-          To address:
+      <div>
+        <label
+          htmlFor="toAddress"
+          style={{ marginRight: "4px", whiteSpace: "nowrap" }}
+        >
+          To:
         </label>
         <input
           id="toAddress"
@@ -105,8 +109,11 @@ function Profile() {
           }}
         />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <label htmlFor="value" style={{ whiteSpace: "nowrap" }}>
+      <div>
+        <label
+          htmlFor="value"
+          style={{ marginRight: "4px", whiteSpace: "nowrap" }}
+        >
           Value:
         </label>
         <input
@@ -138,6 +145,92 @@ function Profile() {
       >
         Transfer
       </button>
+      {connector && (
+        <div>
+          <button
+            onClick={async () => {
+              const provider = (await connector?.getProvider()) as {
+                request(args: { method: string; params: any[] }): any;
+              };
+              const signature = await provider.request({
+                method: "eth_signTypedData_v4",
+                params: [
+                  address,
+                  {
+                    types: {
+                      EIP712Domain: [
+                        {
+                          name: "name",
+                          type: "string",
+                        },
+                        {
+                          name: "version",
+                          type: "string",
+                        },
+                        {
+                          name: "chainId",
+                          type: "uint256",
+                        },
+                        {
+                          name: "verifyingContract",
+                          type: "address",
+                        },
+                      ],
+                      Person: [
+                        {
+                          name: "name",
+                          type: "string",
+                        },
+                        {
+                          name: "wallet",
+                          type: "address",
+                        },
+                      ],
+                      Mail: [
+                        {
+                          name: "from",
+                          type: "Person",
+                        },
+                        {
+                          name: "to",
+                          type: "Person",
+                        },
+                        {
+                          name: "contents",
+                          type: "string",
+                        },
+                      ],
+                    },
+                    primaryType: "Mail",
+                    domain: {
+                      name: "Ether Mail",
+                      version: `${Math.floor(Math.random() * 100)}`,
+                      chainId,
+                      verifyingContract:
+                        "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+                    },
+                    message: {
+                      from: {
+                        name: "Cow",
+                        wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+                      },
+                      to: {
+                        name: "Bob",
+                        wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+                      },
+                      contents: "Hello, Bob!",
+                    },
+                  },
+                ],
+              });
+              setEip712Signature(signature);
+            }}
+          >
+            Request EIP712 signature
+          </button>
+          <div>{eip712Signature}</div>
+        </div>
+      )}
       {errorMessage && (
         <div style={{ color: "red", width: "350px" }}>{errorMessage}</div>
       )}
