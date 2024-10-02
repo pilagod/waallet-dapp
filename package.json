@@ -14,7 +14,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "viem": "^2.0.5",
-    "wagmi": "^2.0.3"
+    "wagmi": "^2.0.3",
+    "webApp-sdk": "file:/Users/whitney/Documents/webApp-sdk"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

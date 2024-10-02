@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   WagmiProvider,
   createConfig,
+  createConnector,
   useAccount,
   useBalance,
   useConnect,
@@ -15,6 +16,7 @@ import {
 } from "wagmi";
 import { custom, defineChain, formatUnits, parseEther, getAddress } from "viem";
 import { sepolia } from "viem/chains";
+import { HoTProvider } from "webApp-sdk/src/index";
 
 const testnet = defineChain({
   id: 1337,
@@ -35,10 +37,69 @@ const testnet = defineChain({
   },
 });
 
+const hotProvider = new HoTProvider({
+  url: "http://localhost:3000/dapp",
+});
+
+const hotConnector = createConnector((config) => ({
+  id: "hotProvider",
+  name: "HoT Provider",
+  type: "custom",
+  connect: async () => {
+    try {
+      const response = await hotProvider.request({
+        method: "eth_requestAccounts",
+      });
+      const accounts = response.result as `0x${string}`[];
+      return { accounts, chainId: config.chains[1].id };
+    } catch (error) {
+      console.error("Failed to connect:", error);
+      throw error;
+    }
+  },
+  getAccounts: async () => {
+    const response = await hotProvider.request({
+      method: "eth_accounts",
+    });
+    return response.result as `0x${string}`[];
+  },
+  getChainId: async () => {
+    const response = await hotProvider.request({
+      method: "eth_chainId",
+    });
+    return response.result as number;
+  },
+  isAuthorized: async () => {
+    try {
+      const response = await hotProvider.request({
+        method: "eth_accounts",
+      });
+      const accounts = response.result as `0x${string}`[];
+      return accounts.length > 0;
+    } catch {
+      return false;
+    }
+  },
+  onAccountsChanged: () => {},
+  onChainChanged: () => {},
+  onDisconnect: () => {},
+  disconnect: async () => {
+    //disconnect from hot
+    // await hotProvider.disconnect();
+    console.log("disconnect");
+  },
+  getProvider: async () => {
+    return hotProvider;
+  },
+}));
+
 const wagmiConfig = createConfig({
   chains: [testnet, sepolia],
+  connectors: [hotConnector],
   transports: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [testnet.id]: custom((window as any).waallet),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [sepolia.id]: custom((window as any).waallet),
   },
 });
@@ -130,6 +191,7 @@ function Profile() {
         disabled={!!errorMessage}
         onClick={async () => {
           await sendTransactionAsync({
+            account: address,
             to: getAddress(toAddress),
             value: parseEther(value),
           });
@@ -209,6 +271,7 @@ function CounterInteraction() {
 
 function OpenDevtoolWindow() {
   const buttonConnectWaalet = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (window as any).waallet.createWindow({
       creation: {
         user: "imToken Labs",
