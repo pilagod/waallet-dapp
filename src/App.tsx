@@ -136,6 +136,56 @@ function Profile() {
   const [value, setValue] = useState<string>("0.01");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  const signTypedData = async () => {
+    // Example from https://docs.metamask.io/wallet/reference/eth_signtypeddata_v4/
+    const typedData = {
+      types: {
+        EIP712Domain: [
+          { name: "name", type: "string" },
+          { name: "version", type: "string" },
+          { name: "chainId", type: "uint256" },
+          { name: "verifyingContract", type: "address" },
+        ],
+        Person: [
+          { name: "name", type: "string" },
+          { name: "wallet", type: "address" },
+        ],
+        Mail: [
+          { name: "from", type: "Person" },
+          { name: "to", type: "Person" },
+          { name: "contents", type: "string" },
+        ],
+      } as const,
+      primaryType: "Mail",
+      domain: {
+        name: "Ether Mail",
+        version: "1",
+        chainId: 1,
+        verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+      },
+      message: {
+        from: {
+          name: "Cow",
+          wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+        },
+        to: {
+          name: "Bob",
+          wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+        },
+        contents: "Hello, Bob!",
+      },
+    };
+    try {
+      const signature = await hotProvider.request({
+        method: "eth_signTypedData_v4",
+        params: [typedData],
+      });
+      console.log("Signature:", signature);
+    } catch (error) {
+      console.error("Error signing message:", error);
+    }
+  };
+
   if (!address) {
     return <div>Loading...</div>;
   }
@@ -200,6 +250,7 @@ function Profile() {
       >
         Transfer
       </button>
+      <button onClick={signTypedData}>Sign Typed Data</button>
       {errorMessage && (
         <div style={{ color: "red", width: "350px" }}>{errorMessage}</div>
       )}
