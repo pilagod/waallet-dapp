@@ -47,10 +47,10 @@ const hotConnector = createConnector((config) => ({
   type: "custom",
   connect: async () => {
     try {
-      const response = await hotProvider.request({
+      const result = await hotProvider.request({
         method: "eth_requestAccounts",
       });
-      const accounts = response.result as `0x${string}`[];
+      const accounts = result as `0x${string}`[];
       return { accounts, chainId: config.chains[1].id };
     } catch (error) {
       console.error("Failed to connect:", error);
@@ -58,23 +58,23 @@ const hotConnector = createConnector((config) => ({
     }
   },
   getAccounts: async () => {
-    const response = await hotProvider.request({
+    const result = await hotProvider.request({
       method: "eth_accounts",
     });
-    return response.result as `0x${string}`[];
+    return result as `0x${string}`[];
   },
   getChainId: async () => {
-    const response = await hotProvider.request({
+    const result = await hotProvider.request({
       method: "eth_chainId",
     });
-    return response.result as number;
+    return result as number;
   },
   isAuthorized: async () => {
     try {
-      const response = await hotProvider.request({
+      const result = await hotProvider.request({
         method: "eth_accounts",
       });
-      const accounts = response.result as `0x${string}`[];
+      const accounts = result as `0x${string}`[];
       return accounts.length > 0;
     } catch {
       return false;
